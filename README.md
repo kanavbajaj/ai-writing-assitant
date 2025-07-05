@@ -28,7 +28,11 @@ A comprehensive AI-powered writing assistant built with Streamlit, LangChain, an
 ## 🛠️ Technology Stack
 
 - **Frontend**: Streamlit
-- **AI Framework**: LangChain
+- **AI Framework**: LangChain (v0.3.26)
+- **LangChain Community**: v0.3.27
+- **LangChain Core**: v0.3.68
+- **LangChain Text Splitters**: v0.3.8
+- **LangChain Google GenAI**: v2.1.6
 - **Language Model**: Google Gemini 2.5 Pro
 - **Vector Database**: ChromaDB
 - **Embeddings**: Google Generative AI Embeddings
