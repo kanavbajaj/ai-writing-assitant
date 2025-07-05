@@ -10,10 +10,41 @@ Setup:
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain.vectorstores import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains import RetrievalQA
+
+# Try different import strategies for LangChain components
+try:
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+except ImportError:
+    try:
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+    except ImportError:
+        st.error("Failed to import langchain_google_genai. Please check your installation.")
+        st.stop()
+
+try:
+    from langchain.vectorstores import Chroma
+except ImportError:
+    try:
+        from langchain_community.vectorstores import Chroma
+    except ImportError:
+        st.error("Failed to import Chroma vectorstore. Please check your installation.")
+        st.stop()
+
+try:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+except ImportError:
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+    except ImportError:
+        st.error("Failed to import text splitter. Please check your installation.")
+        st.stop()
+
+try:
+    from langchain.chains import RetrievalQA
+except ImportError:
+    st.error("Failed to import RetrievalQA. Please check your installation.")
+    st.stop()
+
 import tempfile
 from langchain_core.documents import Document
 
