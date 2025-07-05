@@ -1,16 +1,25 @@
 # Core dependencies
 streamlit>=1.28.0
+python-dotenv>=1.0.0
+
+# LangChain ecosystem
 langchain==0.3.26
 langchain-community==0.3.27
 langchain-core==0.3.68
 langchain-text-splitters==0.3.8
 langchain-google-genai==2.1.6
-chromadb>=0.4.0
+
+# Google AI
 google-generativeai>=0.3.0
-python-dotenv>=1.0.0
+google-api-core>=2.0.0
+google-auth>=2.0.0
+
+# Vector database
+chromadb>=0.4.0
 
 # Document processing
 PyPDF2>=3.0.0
 
-# Optional: For better PDF support
-# pypdf>=3.0.0  # Alternative to PyPDF2 
+# Additional dependencies that might be needed
+pydantic>=2.0.0
+typing-extensions>=4.0.0 
