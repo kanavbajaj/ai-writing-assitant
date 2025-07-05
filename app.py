@@ -67,13 +67,24 @@ embeddings = GoogleGenerativeAIEmbeddings(
 )
 llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-pro", google_api_key=GOOGLE_API_KEY)
 
-# Chroma vector store setup
+# Chroma vector store setup - will be initialized when needed
 persist_directory = "chroma_db"
-vectorstore = Chroma(
-    collection_name="ai-writing-assistant",
-    embedding_function=embeddings,
-    persist_directory=persist_directory
-)
+vectorstore = None
+
+def get_vectorstore():
+    global vectorstore
+    if vectorstore is None:
+        try:
+            vectorstore = Chroma(
+                collection_name="ai-writing-assistant",
+                embedding_function=embeddings,
+                persist_directory=persist_directory
+            )
+        except Exception as e:
+            st.error(f"Failed to initialize ChromaDB: {str(e)}")
+            st.info("This might be due to SQLite version compatibility. Document chat functionality will be disabled.")
+            return None
+    return vectorstore
 
 # Helper: Parse uploaded file
 def parse_file(uploaded_file):
@@ -96,13 +107,27 @@ def chunk_text(text):
 
 # Helper: Upsert to Chroma
 def upsert_to_chroma(chunks):
-    docs = [Document(page_content=chunk) for chunk in chunks]
-    vectorstore.add_documents(docs)
-    vectorstore.persist()
+    if vectorstore is None:
+        st.error("ChromaDB is not available. Document chat functionality is disabled.")
+        return False
+    try:
+        docs = [Document(page_content=chunk) for chunk in chunks]
+        vectorstore.add_documents(docs)
+        vectorstore.persist()
+        return True
+    except Exception as e:
+        st.error(f"Failed to add documents to ChromaDB: {str(e)}")
+        return False
 
 # Helper: Get retriever
 def get_retriever():
-    return vectorstore.as_retriever()
+    if vectorstore is None:
+        return None
+    try:
+        return vectorstore.as_retriever()
+    except Exception as e:
+        st.error(f"Failed to get retriever: {str(e)}")
+        return None
 
 # Helper: Generate phrase suggestions
 def generate_phrase_suggestions(current_text, style="general", num_suggestions=3):
@@ -187,8 +212,10 @@ with tab1:
         text = parse_file(uploaded_file)
         if text:
             chunks = chunk_text(text)
-            upsert_to_chroma(chunks)
-            st.info(f"Document processed and indexed with {len(chunks)} chunks.")
+            if upsert_to_chroma(chunks):
+                st.info(f"Document processed and indexed with {len(chunks)} chunks.")
+            else:
+                st.warning("Document processed but could not be indexed due to ChromaDB issues.")
         else:
             st.error("Failed to parse the uploaded file.")
     
@@ -200,16 +227,22 @@ with tab1:
     
     if st.button("Send", key="chat_send") and user_input:
         retriever = get_retriever()
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True
-        )
-        result = qa_chain({"query": user_input})
-        answer = result["result"]
-        st.session_state['chat_history'].append(("You", user_input))
-        st.session_state['chat_history'].append(("AI", answer))
+        if retriever is None:
+            st.error("Document chat is not available due to ChromaDB initialization issues.")
+        else:
+            try:
+                qa_chain = RetrievalQA.from_chain_type(
+                    llm=llm,
+                    chain_type="stuff",
+                    retriever=retriever,
+                    return_source_documents=True
+                )
+                result = qa_chain({"query": user_input})
+                answer = result["result"]
+                st.session_state['chat_history'].append(("You", user_input))
+                st.session_state['chat_history'].append(("AI", answer))
+            except Exception as e:
+                st.error(f"Error processing query: {str(e)}")
     
     # Display chat history
     for sender, message in st.session_state['chat_history']:
